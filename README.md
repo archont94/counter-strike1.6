@@ -25,7 +25,7 @@ Port 80 is used to serve assets (maps, gfxs etc.) via http for fast download fea
 | Variable       | Value                             | Comment |
 | -------------- | --------------------------------- | ------- |
 | SERVER_NAME    | "Counter-Strike 1.6 DockerServer" | Custom name for server, can be modified later in /hlds/cstrike/server.cfg |
-| FAST_DL        | "http://127.0.0.1/cstrike/"       | Full address for fast download site, it can be IP address or domain of your server. Keep in mind, it have to contain 'http' at beginning. Verify if assets are served properly by checking this link in web browse, you should be able to see gfx, maps, models, overviews, sound and sprites directory. Can be modified later in /hlds/cstrike/server.cfg |
+| FAST_DL        | "http://127.0.0.1/cstrike/"       | Full address for fast download site, it can be IP address or domain of your server. Keep in mind, it have to contain 'http' at beginning. Verify if assets are served properly by checking this link in web browser, you should be able to see gfx, maps, models, overviews, sound and sprites directories and their content. Can be modified later in /hlds/cstrike/server.cfg |
 | ADMIN_STEAM_ID | "STEAM_0:0:123456"                | Custom SteamID for admin user, can be checked in Counter-Strike console (type 'status' when you are connected to any server). Can be modified (or additional admins can be added) in /hlds/cstrike/addons/amxmodx/configs/users.ini |
 
 In order to edit file, log inside container with `docker exec -it CONTAINER_ID bash`. After that you can run `nano` editor and modify files.
