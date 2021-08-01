@@ -24,11 +24,11 @@ Port 80 is used to serve assets (maps, gfxs etc.) via http for fast download fea
 
 | Variable       | Value                             | Comment |
 | -------------- | --------------------------------- | ------- |
-| SERVER_NAME    | "Counter-Strike 1.6 DockerServer" | Custom name for server, can be edited later in /hlds/cstrike/server.cfg |
-| FAST_DL        | "http://127.0.0.1/cstrike/"       | Full address for fast download site, it can be IP address or domain of your server. Keep in mind, have to contain 'http' at beginning. Verify if assets are served properly by checking this link in web browse, you should be able to see gfx, maps, models, overviews, sound and sprites directory. Can be edited later in /hlds/cstrike/server.cfg |
-| ADMIN_STEAM_ID | "STEAM_0:0:123456"                | Custom SteamID for admin user, can be checked in Counter-Strike console (type 'status' when you are connected to any server). Can be edited (or additional admins can be added) in /hlds/cstrike/addons/amxmodx/configs/users.ini |
+| SERVER_NAME    | "Counter-Strike 1.6 DockerServer" | Custom name for server, can be modified later in /hlds/cstrike/server.cfg |
+| FAST_DL        | "http://127.0.0.1/cstrike/"       | Full address for fast download site, it can be IP address or domain of your server. Keep in mind, it have to contain 'http' at beginning. Verify if assets are served properly by checking this link in web browse, you should be able to see gfx, maps, models, overviews, sound and sprites directory. Can be modified later in /hlds/cstrike/server.cfg |
+| ADMIN_STEAM_ID | "STEAM_0:0:123456"                | Custom SteamID for admin user, can be checked in Counter-Strike console (type 'status' when you are connected to any server). Can be modified (or additional admins can be added) in /hlds/cstrike/addons/amxmodx/configs/users.ini |
 
-In order to edit file, log inside container with `docker exec -it CONTAINER_ID bash`. After that you can run nano editor and modify files.
+In order to edit file, log inside container with `docker exec -it CONTAINER_ID bash`. After that you can run `nano` editor and modify files.
 
 ## Available environment variables
 
@@ -56,3 +56,14 @@ docker run --name cs16-server -p 27015:27015/udp -p 27015:27015 -v /path/to/your
 Keep in mind the server.cfg file can override the settings from your environment variables:  
 `MAP`, `MAXPLAYERS` and `SV_LAN`
 
+## Additional mods
+
+In order to install additional amxmodx mods, follow the instrucitons. Usually it is required to copy files to proper folder (`/hlds/cstrike/addons/amxmodx/plugins`) and modify some config files.
+
+In order to copy files to docker you can use `docker cp` command:
+
+``` bash
+docker cp EXTRACTED_MOD_DIRECTORY CONTAINER_ID:/hlds/cstrike/addons/amxmodx
+```
+
+Be careful to not overwrite other files. Before any changes, you can always use `docker commit` command to create image with your changes, which you can restore easily later.
