@@ -1,0 +1,78 @@
+FROM debian:latest
+
+# labels
+ARG BUILD_DATE
+ARG VCS_REF
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/archont94/counter-strike1.6"
+
+# define default env variables
+ARG SERVER_NAME="Counter-Strike 1.6 DockerServer"
+ARG FAST_DL="http://127.0.0.1/cstrike/"
+ARG ADMIN_STEAM_ID="STEAM_0:0:123456"
+
+ENV PORT=27015
+ENV MAP=de_dust2
+ENV MAXPLAYERS=16
+ENV SV_LAN=0
+
+# install dependencies
+RUN dpkg --add-architecture i386
+RUN apt-get update  > /dev/null && \
+    apt-get -qqy install lib32gcc1 curl nano > /dev/null
+
+# create directories
+WORKDIR /root
+RUN mkdir Steam .steam
+
+# download steamcmd
+WORKDIR /root/Steam
+RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf -
+
+# install CS 1.6 via steamcmd
+RUN ./steamcmd.sh +login anonymous +force_install_dir "/hlds" +app_update 90 +app_set_config 90 mod cstrike validate +quit || true
+# https://danielgibbs.co.uk/2017/10/hlds-steamcmd-workaround-appid-90-part-ii/
+RUN rm -r /hlds/steamapps/*
+RUN for i in 10 70 90; do curl -s https://raw.githubusercontent.com/dgibbs64/HLDS-appmanifest/master/CounterStrike/appmanifest_$i.acf -o /hlds/steamapps/appmanifest_$i.acf; done
+RUN ./steamcmd.sh +login anonymous +force_install_dir "/hlds" +app_update 90 +app_set_config 90 mod cstrike validate +quit || true
+RUN ./steamcmd.sh +login anonymous +app_update 70 validate +quit || true
+RUN ./steamcmd.sh +login anonymous +app_update 10 validate +quit || true
+RUN ./steamcmd.sh +login anonymous +force_install_dir /hlds +app_update 90 validate +quit || true
+
+# link sdk
+WORKDIR /root/.steam
+RUN ln -s ../Steam/linux32 sdk32
+
+# install metamod
+RUN mkdir -p /hlds/cstrike/addons/metamod/dlls
+WORKDIR /hlds/cstrike/addons/metamod/dlls
+RUN curl -sqL "http://prdownloads.sourceforge.net/metamod/metamod-1.20-linux.tar.gz" | tar zxf -
+RUN touch /hlds/cstrike/addons/metamod/plugins.ini
+RUN sed -i 's/gamedll_linux "dlls\/cs.so"/#gamedll_linux "dlls\/cs.so"\ngamedll_linux "addons\/metamod\/dlls\/metamod.so"/'  /hlds/cstrike/liblist.gam
+
+# install amxmodx
+WORKDIR /hlds/cstrike
+RUN curl -sqL "https://www.amxmodx.org/release/amxmodx-1.8.2-base-linux.tar.gz" | tar zxf -
+RUN curl -sqL "https://www.amxmodx.org/release/amxmodx-1.8.2-cstrike-linux.tar.gz" | tar zxf -
+RUN echo "linux addons/amxmodx/dlls/amxmodx_mm_i386.so" >> /hlds/cstrike/addons/metamod/plugins.ini
+RUN echo "\"$ADMIN_STEAM_ID\" \"\" \"abcdefghijklmnopqrstu\" \"ce\" ; Server admin added during container build" >> /hlds/cstrike/addons/amxmodx/configs/users.ini
+
+# configure nginx to allow for FastDownload
+RUN apt-get install -y nginx
+RUN mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup
+COPY nginx_config.conf /etc/nginx/sites-available/default
+RUN bash -c "mkdir -p /srv/cstrike/{gfx,maps,models,overviews,sound,sprites}/nothing-here"
+
+# configure FastDownload
+RUN echo "// enable fast download - sv_downloadurl have to start with 'http', end with 'cstrike/', i.e. 'http://10.20.30.40/cstrike/'  " >> /hlds/cstrike/server.cfg
+RUN echo "sv_downloadurl \"$FAST_DL\"" >> /hlds/cstrike/server.cfg
+RUN echo "sv_allowdownload 1" >> /hlds/cstrike/server.cfg
+RUN echo "sv_allowupload 1" >> /hlds/cstrike/server.cfg
+
+# change server name
+RUN sed -i "s/hostname \"Counter-Strike 1.6 Server\"/hostname \"$SERVER_NAME\"/" /hlds/cstrike/server.cfg
+
+# start server
+WORKDIR /hlds
+ENTRYPOINT service nginx start; ./hlds_run -game cstrike -strictportbind -ip 0.0.0.0 -port $PORT +sv_lan $SV_LAN +map $MAP -maxplayers $MAXPLAYERS
