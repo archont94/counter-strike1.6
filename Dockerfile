@@ -29,13 +29,10 @@ RUN dpkg --add-architecture i386; \
 #     additional info: https://danielgibbs.co.uk/2017/10/hlds-steamcmd-workaround-appid-90-part-ii/
 RUN mkdir /root/Steam /root/.steam ; \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxf - -C /root/Steam ; \
-    /root/Steam/steamcmd.sh +login anonymous +force_install_dir "/hlds" +app_update 90 +app_set_config 90 mod cstrike validate +quit; \
-    rm -r /hlds/steamapps/* ; \
-    for i in 10 70 90; do curl -s https://raw.githubusercontent.com/dgibbs64/HLDS-appmanifest/master/CounterStrike/appmanifest_$i.acf -o /hlds/steamapps/appmanifest_$i.acf; done ; \
     /root/Steam/steamcmd.sh +login anonymous +force_install_dir "/hlds" +app_update 90 +app_set_config 90 mod cstrike validate +quit ; \
-    /root/Steam/steamcmd.sh +login anonymous +app_update 70 validate +quit ; \
-    /root/Steam/steamcmd.sh +login anonymous +app_update 10 validate +quit ; \
-    /root/Steam/steamcmd.sh +login anonymous +force_install_dir /hlds +app_update 90 validate +quit ; \
+    rm -r /hlds/steamapps/* ; \
+    curl -s https://raw.githubusercontent.com/dgibbs64/HLDS-appmanifest/master/CounterStrike/appmanifest_90.acf -o /hlds/steamapps/appmanifest_90.acf ; \
+    /root/Steam/steamcmd.sh +login anonymous +force_install_dir "/hlds" +app_update 90 +app_set_config 90 mod cstrike validate +quit ; \
     rm -r /root/.steam /root/Steam
 
 # install metamod
